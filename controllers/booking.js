@@ -3,15 +3,16 @@ const { Op } = require("sequelize");
 
 class BookingController {
   static async getAllBookings(req, res, next) {
+    const { id: UserId } = req.user;
     try {
-      const hospitals = await Booking.findAll({
+      const bookings = await Booking.findAll({
         attributes: [
           'id',
           [sequelize.literal('"Doctor"."fullName"'), 'doctor'],
           'bookingDate',
           'bookingTime',
           [sequelize.literal('"History"."status"'), 'status'],
-          [sequelize.literal('"Doctor->Hospital"'), 'hospital'],
+          [sequelize.literal('"Doctor->Hospital"."name"'), 'hospital'],
           [sequelize.literal('"Doctor"."imgUrl"'), 'imgUrl'],
         ],
         include: [
@@ -32,24 +33,32 @@ class BookingController {
               status: 'terkonfirmasi', 
             },
           },
+          {
+            model: FamilyMember,
+            attributes: [], 
+            where: {
+              UserId, 
+            },
+          },
         ],
       });
-      res.status(200).json(hospitals);
+      res.status(200).json(bookings);
     } catch (error) {
       next(error);
     }
   }
 
   static async getAllBookingHistories(req, res, next) {
+    const { id: UserId } = req.user;
     try {
-      const hospitals = await Booking.findAll({
+      const bookings = await Booking.findAll({
         attributes: [
           'id',
           [sequelize.literal('"Doctor"."fullName"'), 'doctor'],
           'bookingDate',
           'bookingTime',
           [sequelize.literal('"History"."status"'), 'status'],
-          [sequelize.literal('"Doctor->Hospital"'), 'hospital'],
+          [sequelize.literal('"Doctor->Hospital"."name"'), 'hospital'],
           [sequelize.literal('"Doctor"."imgUrl"'), 'imgUrl'],
         ],
         include: [
@@ -72,9 +81,16 @@ class BookingController {
               }, 
             },
           },
+          {
+            model: FamilyMember,
+            attributes: [], 
+            where: {
+              UserId, 
+            },
+          },
         ],
       });
-      res.status(200).json(hospitals);
+      res.status(200).json(bookings);
     } catch (error) {
       next(error);
     }
@@ -84,7 +100,7 @@ class BookingController {
     try {
       const { bookingId } = req.params;
 
-      const booking = await Booking.findAll({
+      const booking = await Booking.findOne({
         attributes: [
           'id',
           [sequelize.literal('"FamilyMember"."firstName" || \' \' || "FamilyMember"."lastName"'), 'fullName'],
@@ -117,15 +133,15 @@ class BookingController {
           },
           {
             model: FamilyMember,
-            attributes: [], // Include only the specified columns above
+            attributes: [], 
           },
           {
             model: History,
-            attributes: [], // Include only the specified columns above
+            attributes: [], 
           },
         ],
         where: {
-          id: bookingId, // Filter by the bookingId from the query parameter
+          id: bookingId, 
         },
       });
       res.status(200).json(booking);

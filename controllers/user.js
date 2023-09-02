@@ -1,4 +1,4 @@
-const { User, FamilyMember } = require('../models');
+const { User, FamilyMember, sequelize } = require('../models');
 
 class UserController {
   static async getPoints(req, res, next) {
@@ -20,9 +20,13 @@ class UserController {
         where: {
           UserId
         },
-        attributes: ["id", "firstName", "lastName", "relationship"],
+        attributes: [
+          "id", 
+          [sequelize.literal('"firstName" || \' \' || "lastName"'), "fullName"],
+          "relationship"
+        ],
       });
-      res.status(200).json(families.map(family => ({ id: family.id, fullName: `${family.firstName} ${family?.lastName}`, relationship: family.relationship })));
+      res.status(200).json(families);
     } catch (error) {
       next(error);
     }
