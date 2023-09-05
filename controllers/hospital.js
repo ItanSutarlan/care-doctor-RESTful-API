@@ -165,50 +165,71 @@ class HospitalController {
     const { hospitalId, doctorId } = req.params;
     const { start_date: startDate, end_date: endDate } = req.query;
     const whereCondition = {
-      '$doctor.HospitalId$': hospitalId,
-      DoctorId: doctorId
+      HospitalId: hospitalId,
+      id: doctorId
     };
   
     if (startDate && endDate) {
-      whereCondition.date = {
+      whereCondition['$dates.date$'] = {
         [Op.between]: [startDate, endDate]
       }
     }
     
     try {
-      const schedules = await Schedule.findAll({
+      const doctor = await Doctor.findOne({
         where: whereCondition,
-        attributes: [
-          "id",
-          "date",
-          "DoctorId"
-        ],
         include: [
           {
-            model: Doctor,
-            as: "doctor",
-            attributes: [],
-          },
-          {
-            model: Hour,
-            attributes: {
-              exclude: ["ScheduleId"]
-            },
-            as: "times",
+            model: Schedule,
+            as: "dates",
+            attributes: [
+              "id",
+              "date",
+            ],
             include: [
               {
-                model: HourDetail,
-                as: "intervals",
+                model: Doctor,
+                as: "doctor",
+                attributes: [],
+              },
+              {
+                model: Hour,
                 attributes: {
-                  exclude: ["HourId"]
+                  exclude: ["ScheduleId"]
                 },
+                as: "times",
+                include: [
+                  {
+                    model: HourDetail,
+                    as: "intervals",
+                    attributes: {
+                      exclude: ["HourId"]
+                    },
+                  },
+                ],
               },
             ],
           },
+          {
+            model: Hospital,
+            attributes: [],
+          },
+          {
+            model: Specialization,
+            as: "specialization",
+            attributes: [],
+          },
+        ],
+        attributes: [
+          "id",
+          "fullName",
+          "imgUrl",
+          [sequelize.literal('"specialization"."name"'), 'specializationName'], 
+          [sequelize.literal('"Hospital"."name"'), "hospitalName"],
         ],
       });
 
-      res.status(200).json(schedules);
+      res.status(200).json(doctor);
     } catch (error) {
       next(error);
     }
